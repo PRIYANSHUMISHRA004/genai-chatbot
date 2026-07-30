@@ -2,6 +2,9 @@ import { GoogleGenAI } from "@google/genai";
 import { executeCommand, executeCommandDeclaration } from "functions";
 import type { NextApiRequest, NextApiResponse } from "next";
 import os from 'os';
+import dns from "dns";
+
+dns.setDefaultResultOrder("ipv4first");
 
 type Data={
     message:string
@@ -88,8 +91,16 @@ let platform=os.platform();
 
 }
 export default async function Handler(req:NextApiRequest,res:NextApiResponse<Data>){
-  let {history}=req.body;
-  let result=await main(history);
-  console.log(`Radhe Radhe i am agent api`)
+  try {
+    let {history}=req.body;
+    let result=await main(history);
+    console.log(`Radhe Radhe i am agent api`)
     return res.json({message:`Radhe Radhe ${result}`});
+  } catch (error: any) {
+    console.error(error);
+    if (error.status === 429 || (error.message && error.message.includes("429"))) {
+      return res.status(429).json({ message: `Gemini API Quota Exceeded. Please try again later.` });
+    }
+    return res.status(500).json({ message: `Something went wrong` });
+  }
 }

@@ -1,120 +1,133 @@
 import { GoogleGenAI } from "@google/genai";
 import { Prime, primeDeclaration, sum, sumDeclaration } from "functions";
-
-// Next.js API route support: https://nextjs.org/docs/api-routes/introduction
 import type { NextApiRequest, NextApiResponse } from "next";
+import dns from "dns";
 
-type Data = {
-  message: string;
-};
+dns.setDefaultResultOrder("ipv4first");
+
 type Message = {
   role: "user" | "model";
   content: string;
 };
-let fn = {
-  prime: Prime,
-  sum: sum,
-};
+
+const ai = new GoogleGenAI({
+  apiKey: process.env.GEMINI_API_KEY,
+});
+
 const tools = [
   {
     functionDeclarations: [primeDeclaration, sumDeclaration],
   },
 ];
 
-let ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const functions = {
+  prime: Prime,
+  sum: sum,
+};
 
-async function main(userChat: string): Promise<string> {
-  const chat = ai.chats.create({
-    model: "gemini-2.5-flash",
-    history: [
-      {
-        role: "user",
-        parts: [{ text: "Hello" }],
-      },
-      {
-        role: "model",
-        parts: [{ text: "Great to meet you. What would you like to know?" }],
-      },
-    ],
-    config: {
-      systemInstruction: `Radhe Radhe You are Data Structre And Algorithm  instructor ,You Only reply to problem related to Data Structure And Algorithm With Optimal Solution in Simple way ,BUt if question is not related to Data structure ad Algorithm Reply him Politely with one Geeta SLok in Hndi with definition in simple way`,
-    },
-  });
-  let res = await chat.sendMessage({
-    message: userChat,
-  });
-  return res.text ? res.text : "";
-}
-async function ChatAI(history: Message[]): Promise<string> {
-  // converting history in proper fromet
-  const contents: any[] = history.map((msg) => ({
-    role: msg.role,
+function formatHistory(history: Message[]): any[] {
+  return history.map((message) => ({
+    role: message.role,
     parts: [
       {
-        text: msg.content,
+        text: message.content,
       },
     ],
   }));
+}
+
+async function chatAI(history: Message[]): Promise<string> {
+  const contents = formatHistory(history);
+  console.log('HISTORY SIZE IS ',contents.length)
+
   while (true) {
-    let res = await ai.models.generateContent({
+    const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
       contents,
       config: {
-        tools: tools,
+        systemInstruction: `
+You are an expert Data Structures and Algorithms instructor.
+
+Rules:
+- Answer ONLY DSA and Competitive Programming related questions.
+- Give optimal solutions.
+- Explain in simple language.
+- Mention time and space complexity whenever applicable.
+- If the question is unrelated to DSA, politely refuse and reply with one Geeta shloka in Hindi along with a simple explanation.
+        `,
+        tools,
       },
     });
-    let fnCall = res.functionCalls;
-    if (fnCall && fnCall.length > 0) {
-      let { name, args, id } = fnCall[0];
-      if (name && name in fn && args) {
-        const tool = fn[name as keyof typeof fn];
-        const result = tool(args as any);
-        const functionRes = {
-          name: name,
-          response: {
-            result: result,
-          },
-          id,
-        };
-        console.log(`Radhe Radhe name ${name} num1 ${args.num} `)
-        contents.push({
-          role: "model",
-          parts: [
-            {
-              functionCall: fnCall[0],
-            },
-          ],
-        });
-        contents.push({
-          role: "user",
-          parts: [
-            {
-              functionResponse: functionRes,
-            },
-          ],
-        });
-      }
-    } else {
-      return res.text ? res.text : "";
+
+    const functionCall = response.functionCalls?.[0];
+
+    if (!functionCall) {
+      return response.text || "";
     }
+
+    const { name, args, id } = functionCall;
+
+    if (!name || !(name in functions)) {
+      return "Unsupported function.";
+    }
+
+    const result = functions[name as keyof typeof functions](args as any);
+
+    contents.push({
+      role: "model",
+      parts: [
+        {
+          functionCall,
+        },
+      ],
+    });
+
+    contents.push({
+      role: "user",
+      parts: [
+        {
+          functionResponse: {
+            id,
+            name,
+            response: {
+              result,
+            },
+          },
+        },
+      ],
+    });
   }
-  //
 }
+
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse,
 ) {
+  console.log('in DSA SESSION')
   try {
-    const { history } = req.body;
-
     if (!process.env.GEMINI_API_KEY) {
-      return res.status(500).json({ message: "GEMINI_API_KEY is missing" });
+      return res.status(500).json({
+        message: "GEMINI_API_KEY is missing",
+      });
     }
 
-    const dt = await ChatAI(history);
-    return res.status(200).json({ message: dt });
-  } catch (error) {
+    const { history } = req.body;
+
+    const reply = await chatAI(history);
+
+    return res.status(200).json({
+      message: reply,
+    });
+  } catch (error: any) {
     console.error(error);
-    return res.status(500).json({ message: "Something went wrong" });
+    if (error.status === 429 || (error.message && error.message.includes("429"))) {
+      return res.status(429).json({
+        message: "Gemini API Quota Exceeded. Please try again later.",
+      });
+    }
+
+    return res.status(500).json({
+      message: "Something went wrong",
+    });
   }
 }
