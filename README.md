@@ -1,6 +1,17 @@
 # Gemini GenAI Monorepo
 
-A monorepo workspace structured using Turborepo that builds a frontend application integrated with the Google GenAI SDK (`@google/genai`). It features a Data Structures and Algorithms (DSA) tutor chatbot and an automated web app builder agent.
+A monorepo workspace structured using Turborepo that builds a frontend application integrated with the Google GenAI SDK (`@google/genai`). It showcases advanced AI engineering paradigms, centering around autonomous agent execution and system tool calling.
+
+---
+
+## 🌟 Core Capabilities (Resume Highlights)
+
+* **DSA Instructor**: A specialized assistant configured to guide users on Data Structures, Algorithms, and Competitive Programming. It implements strict boundary guardrails: any questions unrelated to computer science are politely declined and answered with a Bhagavad Geeta shloka in Hindi along with a simple translation and explanation.
+* **Gemini Function Calling**: Seamless implementation of Gemini API's function/tool calling capability, allowing the LLM to decide when to call local code to execute tasks deterministically.
+* **Prime & Sum Tools**: Numerical helper functions integrated directly as tools into the DSA tutor agent to perform exact mathematical checks (e.g., checking primes or executing sums) without model hallucinations.
+* **AI App-Building Agent**: A fully autonomous task-execution agent configured to build, scaffold, and configure simple frontend web components from scratch.
+* **Command-Execution Tool**: An OS-level execution utility using Node's `child_process` (`exec`) to run local terminal commands. The agent uses this tool step-by-step to create directories, create HTML/CSS/JS files, and write code directly on the host machine.
+* **Conversation-History Handling**: A robust state-management workflow. It formats active chat histories (mapping client-side message structures to Gemini `role` and `parts` schemas) and utilizes a recursive execution loop (`while (true)`) to feed intermediate tool call responses back into the model's history context until a final response is generated.
 
 ---
 
@@ -25,15 +36,11 @@ This monorepo separates logic and UI into applications (`apps/`) and shared pack
 The application configures two distinct Gemini 2.5 Flash chatbot agents:
 
 ### 1. DSA Instructor Chatbot (`/api/chat`)
-* **Description**: A dedicated tutor that answers questions strictly relating to **Data Structures & Algorithms** and **Competitive Programming**.
-* **Behavior**:
-  * Explains key concepts with time and space complexity details.
-  * **Fallback**: If you ask questions unrelated to DSA, it will politely decline and reply with a Bhagavad Geeta shloka in Hindi along with a simple translation/explanation.
-  * **Tools**: Has function calling access to the `prime` and `sum` tools.
+* **Description**: Renders the DSA Instructor agent utilizing the **Prime & Sum tools** via function calling.
+* **Fallback**: Returns a Bhagavad Geeta shloka for off-topic queries.
 
 ### 2. App-Builder AI Agent (`/api/chat/agent`)
-* **Description**: An AI system configured to write, structure, and deploy minor applications locally based on user prompts.
-* **Tools**: Has access to the `executeCommand` tool, enabling it to generate and run terminal commands (e.g. `mkdir`, creating HTML/CSS/JS files, writing code) directly on the system.
+* **Description**: Renders the App-Builder agent utilizing the **Command-Execution tool** to scaffold client code.
 
 ---
 
