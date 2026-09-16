@@ -1,16 +1,18 @@
-# GenAI Chatbot - Standalone Next.js Application
+# GenAI Chatbot - Next.js Application
 
-A standalone Next.js (Pages Router) application built with React, TypeScript, and Tailwind CSS, integrated with the Google GenAI SDK (`@google/genai`).
+A fast, lightweight Next.js (Pages Router) chat application built with React 19, TypeScript, Tailwind CSS, and the Google GenAI SDK (`@google/genai`).
 
 ---
 
-## 🌟 Core Capabilities
+## 🌟 Features
 
-* **DSA Instructor (`/api/chat`)**: A specialized assistant configured to guide users on Data Structures, Algorithms, and Competitive Programming. Implements strict boundary guardrails: questions unrelated to computer science are politely declined and answered with a Bhagavad Geeta shloka in Hindi along with a translation and explanation.
-* **Gemini Function Calling**: Implements Gemini API function/tool calling to deterministically invoke local TypeScript functions (`prime` and `sum`).
-* **AI App-Building Agent (`/api/chat/agent`)**: An autonomous agent route demonstrating server-side command execution via the `executeCommand` tool.
-* **Conversation History Handling**: Maps client message states to Gemini schemas and utilizes an execution loop to handle multi-turn tool calling seamlessly.
-* **Clean Tailwind UI**: Responsive dark theme interface with conversational history, active session tracking, loading indicators, and enter-to-send messaging.
+* **DSA Instructor Chat (`/api/chat`)**: Specialised AI assistant powered by `gemini-2.5-flash` focused on Data Structures, Algorithms, and Competitive Programming.
+* **Function & Tool Calling**: Integrated function declarations allowing Gemini to call local utilities:
+  * `prime`: Primality testing algorithm.
+  * `sum`: Numerical summation.
+  * `executeCommand`: Autonomous terminal execution in `/api/chat/agent`.
+* **Clean & Responsive UI**: Minimalist dark-themed chat interface with auto-scrolling, clear role-based bubbles, and keyboard shortcuts (`Enter` to send).
+* **Optimized & Lightweight**: Zero bloated dependencies, fast compile times with Next.js Turbopack, and clean code structure.
 
 ---
 
@@ -20,30 +22,24 @@ A standalone Next.js (Pages Router) application built with React, TypeScript, an
 genai-chatbot/
 ├── src/
 │   ├── pages/
-│   │   ├── index.tsx
-│   │   ├── _app.tsx
-│   │   ├── _document.tsx
+│   │   ├── index.tsx          # Main Chat Interface (Input, Output, Auto-Scroll)
+│   │   ├── _app.tsx           # Next.js App Wrapper
+│   │   ├── _document.tsx      # HTML Document Structure
 │   │   └── api/
 │   │       └── chat/
-│   │           ├── index.ts
-│   │           └── agent.ts
+│   │           ├── index.ts   # DSA Chatbot API Route with Function Calling
+│   │           └── agent.ts   # App-Builder AI Agent API Route
 │   ├── functions/
-│   │   ├── numerical/
-│   │   │   ├── prime.ts
-│   │   │   ├── sum.ts
-│   │   │   └── index.ts
-│   │   ├── commandRunner/
-│   │   │   ├── execute.ts
-│   │   │   └── index.ts
+│   │   ├── numerical/         # Math tool declarations (prime, sum)
+│   │   ├── commandRunner/     # Shell execution tool declaration
 │   │   └── index.ts
 │   └── styles/
-│       └── globals.css
-├── public/
+│       └── globals.css        # Tailwind CSS and global styling
+├── public/                    # Static assets
 ├── package.json
 ├── tsconfig.json
 ├── next.config.ts
 ├── tailwind.config.ts
-├── postcss.config.mjs
 └── README.md
 ```
 
@@ -51,35 +47,37 @@ genai-chatbot/
 
 ## 🔌 API Endpoints
 
-### 1. DSA Instructor Chatbot (`/api/chat`)
-* Renders the DSA Instructor agent utilizing the **Prime & Sum tools** via function calling.
-* Returns a Bhagavad Geeta shloka for off-topic queries.
+### 1. DSA Instructor (`POST /api/chat`)
+* Receives `{ history: Message[] }`
+* Uses `gemini-2.5-flash` with system prompts and tool calling (`prime`, `sum`).
+* Returns `{ message: string }`.
 
-### 2. App-Builder AI Agent (`/api/chat/agent`)
-* Renders the App-Builder agent utilizing the **Command-Execution tool** to execute terminal commands server-side.
+### 2. Autonomous Agent (`POST /api/chat/agent`)
+* Server-side command execution agent with `executeCommand` function declaration.
 
 ---
 
 ## 🛠️ Getting Started
 
-### 1. Environment Variables
-Create a `.env.local` file in the root directory and add your Google Gemini API key:
+### 1. Environment Setup
+Create a `.env.local` file in the root directory:
 ```env
 GEMINI_API_KEY=your_gemini_api_key_here
 ```
 
-### 2. Installation
+### 2. Install Dependencies
 ```bash
 npm install
 ```
 
-### 3. Running Locally
+### 3. Run Development Server
 ```bash
 npm run dev
 ```
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-### 4. Production Build
+### 4. Build for Production
 ```bash
 npm run build
-npm run start
+npm start
 ```

@@ -37,7 +37,9 @@ function formatHistory(history: Message[]): any[] {
 }
 
 async function chatAI(history: Message[]): Promise<string> {
-  const contents = formatHistory(history);
+
+  const recentHistory = history.slice(-10);
+const contents = formatHistory(recentHistory);
   console.log("HISTORY SIZE IS ", contents.length);
 
   while (true) {
